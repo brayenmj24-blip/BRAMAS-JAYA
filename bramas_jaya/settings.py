@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,9 +48,33 @@ SECRET_KEY = os.environ.get(
 # Default-nya False (aman) kalau env var tidak diset sama sekali.
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False').strip().lower() == 'true'
 
-ALLOWED_HOSTS = [
+allowed_hosts = [
     h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if h.strip()
 ]
+
+for env_name in ('WEBSITE_HOSTNAME', 'RENDER_EXTERNAL_HOSTNAME', 'VIRTUAL_HOST'):
+    value = os.environ.get(env_name, '').strip()
+    if value:
+        allowed_hosts.append(value)
+
+app_url = os.environ.get('APP_URL', '').strip()
+if app_url:
+    allowed_hosts.append(urlparse(app_url).netloc)
+
+if not allowed_hosts:
+    allowed_hosts = ['localhost', '127.0.0.1', '0.0.0.0', '[::1]', '*']
+
+ALLOWED_HOSTS = allowed_hosts
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+csrf_origins = [
+    origin.strip() for origin in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()
+]
+if app_url and app_url not in csrf_origins:
+    csrf_origins.append(app_url)
+
+CSRF_TRUSTED_ORIGINS = csrf_origins
 
 
 # Application definition
