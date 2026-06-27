@@ -71,10 +71,35 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 csrf_origins = [
     origin.strip() for origin in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()
 ]
-if app_url and app_url not in csrf_origins:
-    csrf_origins.append(app_url)
+if app_url:
+    parsed = urlparse(app_url)
+    if parsed.scheme and parsed.netloc:
+        origin = f"{parsed.scheme}://{parsed.netloc}"
+        if origin not in csrf_origins:
+            csrf_origins.append(origin)
+
+# Otomatis tambahkan trusted origin dari ALLOWED_HOSTS bila belum dikonfigurasi.
+if not csrf_origins:
+    for host in allowed_hosts:
+        if not host or host in ['localhost', '127.0.0.1', '0.0.0.0', '[::1]', '*']:
+            continue
+        if host.startswith('[') or host[0].isdigit():
+            schemes = ['http://', 'https://']
+        else:
+            schemes = ['https://', 'http://']
+        for scheme in schemes:
+            origin = f"{scheme}{host}"
+            if origin not in csrf_origins:
+                csrf_origins.append(origin)
 
 CSRF_TRUSTED_ORIGINS = csrf_origins
+
+if app_url and app_url.startswith('https://'):
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+else:
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
 
 
 # Application definition
@@ -87,6 +112,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'toko'
+]
+
+AUTHENTICATION_BACKENDS = [
+    'toko.auth_backends.EmailOrUsernameModelBackend',
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 MIDDLEWARE = [
@@ -147,33 +177,3 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
-]
-
-
-# Internationalization
-# https://docs.djangoproject.com/en/6.0/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'Asia/Jakarta'
-
-USE_I18N = True
-
-USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.0/howto/static-files/
-
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'static']
-SESSION_COOKIE_NAME = 'bramasjaya_session'
-MEDIA_URL = os.environ.get('MEDIA_URL', '/media/')
-MEDIA_ROOT = os.environ.get('MEDIA_ROOT', os.path.join(BASE_DIR, 'media'))
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Ongkir flat berdasarkan area (Jawa vs Luar Jawa) — lihat toko/views.py
-ONGKIR_JAWA = 25000
-ONGKIR_LUAR_JAWA = 50000
