@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.conf import settings
 
 
 class Produk(models.Model):
@@ -69,6 +70,17 @@ class ItemPesanan(models.Model):
 
     def subtotal(self):
         return self.harga * self.jumlah
+
+    def gambar_url(self):
+        if not self.produk_gambar:
+            return ''
+        path = str(self.produk_gambar).replace('\\', '/')
+        if path.startswith(('http://', 'https://')):
+            return path
+        if path.startswith('/'):
+            return path
+        media_url = str(getattr(settings, 'MEDIA_URL', '/media/'))
+        return f"{media_url.rstrip('/')}/{path.lstrip('/')}"
 
 
 class DompetAdmin(models.Model):
