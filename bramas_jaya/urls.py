@@ -1,7 +1,8 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.static import serve
 from toko import views
 
 admin.site.logout_template = None
@@ -29,8 +30,13 @@ urlpatterns = [
     path('cek-ongkir/', views.cek_ongkir, name='cek_ongkir'),
 ]
 
-# Serve media files (foto produk, bukti bayar, QRIS)
-# Django static() hanya aktif saat DEBUG=True secara default,
-# tapi dengan cara ini tetap aktif di production sebagai fallback.
-# Untuk performa optimal, konfigurasikan Nginx/Apache untuk serve /media/ langsung.
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files (foto produk, bukti bayar, QRIS).
+# Django static() hanya aktif saat DEBUG=True, jadi tambahkan fallback
+# untuk deployment production jika hosting belum melayani /media/ secara terpisah.
+if settings.MEDIA_URL.startswith('/'):
+    if settings.DEBUG:
+        urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    else:
+        urlpatterns += [
+            re_path(r'^%s(?P<path>.*)$' % settings.MEDIA_URL.lstrip('/'), serve, {'document_root': settings.MEDIA_ROOT}),
+        ]
