@@ -9,12 +9,14 @@ from .models import Produk, Pesanan, ItemPesanan, DompetAdmin, RiwayatDompet, Re
 import json, random
 
 
+@ensure_csrf_cookie
 def login_page(request):
     if request.user.is_authenticated:
         if request.user.is_staff:
             return redirect('/admin/')
         return redirect('home')
-    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    ajax_request = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', '')
+    if request.method == 'POST' and ajax_request:
         username = request.POST.get('username')
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
@@ -39,10 +41,12 @@ def login_page(request):
     return render(request, 'login.html', {'error': error})
 
 
+@ensure_csrf_cookie
 def register_user(request):
     if request.user.is_authenticated:
         return redirect('home')
-    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    ajax_request = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', '')
+    if request.method == 'POST' and ajax_request:
         nama     = request.POST.get('nama', '').strip()
         email    = request.POST.get('email', '').strip()
         telepon  = request.POST.get('telepon', '').strip()
