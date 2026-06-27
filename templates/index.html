@@ -1451,7 +1451,7 @@ async function submitLogin(){
   const fd=new FormData();
   fd.append('username',username); fd.append('password',password); fd.append('csrfmiddlewaretoken',getCookie('csrftoken'));
   try {
-    const res=await fetch('/login/',{method:'POST',body:fd,headers:{'X-Requested-With':'XMLHttpRequest'}});
+    const res=await fetch('/login/',{method:'POST',body:fd,headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'},credentials:'same-origin'});
     const data=await res.json();
     if(data.success){ if(data.redirect==='/admin/') window.location.href='/admin/'; else window.location.href='/home/'; }
     else showModalError('login-error',data.error||'Login gagal');
