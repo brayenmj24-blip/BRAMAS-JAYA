@@ -139,7 +139,7 @@ def buat_pesanan(request):
                     pesanan=pesanan,
                     produk_nama=item['name'],
                     produk_emoji=item['emoji'],
-                    produk_gambar=produk.gambar.name if produk.gambar else '',
+                    produk_gambar=produk.gambar.name.replace('\\', '/') if produk.gambar else '',
                     harga=produk.harga,   # dari DB, bukan dari client
                     jumlah=item['qty']
                 )
